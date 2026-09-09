@@ -43,10 +43,9 @@ fetch_release helm/helm /src/helm3 "v${HELM3_VERSION}" "${HELM3_COMMIT}"
     cd /src/helm3
     GOFLAGS= go get golang.org/x/crypto@v0.57.0
     GOFLAGS= go get oras.land/oras-go/v2@v2.6.2
+    GOFLAGS= go mod tidy
     export GOFLAGS=-mod=readonly
-    mkdir -p /out/helm3-bin
-    make build BINDIR=/out/helm3-bin VERSION="v${HELM3_VERSION}" GIT_COMMIT="${HELM3_COMMIT}" GIT_DIRTY=clean
-    mv /out/helm3-bin/helm /out/helm3
+    go build -trimpath -ldflags "-s -w -X helm.sh/helm/v3/internal/version.version=v${HELM3_VERSION} -X helm.sh/helm/v3/internal/version.gitCommit=${HELM3_COMMIT} -X helm.sh/helm/v3/internal/version.gitTreeState=clean" -o /out/helm3 ./cmd/helm
 )
 
 fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUBECTL_COMMIT}"

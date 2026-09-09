@@ -4,7 +4,7 @@ Production-oriented Kubernetes CLI toolbox based on Alpine Linux 3.24. The final
 
 ## Included tools
 
-- Helm 3.21.4
+- Helm 4.2.4
 - kubectl 1.36.4
 - Kustomize 5.8.1
 - yq 4.53.6

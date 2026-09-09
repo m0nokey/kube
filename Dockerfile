@@ -48,15 +48,15 @@ RUN apk add --no-cache \
     && adduser -S -D -u 1000 -G kube -h /home/kube -s /bin/bash kube \
     && install -d -m 0755 -o kube -g kube /workspace /home/kube/.kube /home/kube/.cache
 
-COPY --from=builder --chmod=0755 /out/helm /usr/local/bin/helm
-COPY --from=builder --chmod=0755 /out/kubectl /usr/local/bin/kubectl
-COPY --from=builder --chmod=0755 /out/kubeadm /usr/local/bin/kubeadm
-COPY --from=builder --chmod=0755 /out/crictl /usr/local/bin/crictl
-COPY --from=builder --chmod=0755 /out/etcdctl /usr/local/bin/etcdctl
-COPY --from=builder --chmod=0755 /out/etcdutl /usr/local/bin/etcdutl
-COPY --from=builder --chmod=0755 /out/clusterctl /usr/local/bin/clusterctl
-COPY --from=builder --chmod=0755 /out/kustomize /usr/local/bin/kustomize
-COPY --from=builder --chmod=0755 /out/yq /usr/local/bin/yq
+COPY --from=builder --chown=0:0 --chmod=0755 /out/helm /usr/local/bin/helm
+COPY --from=builder --chown=0:0 --chmod=0755 /out/kubectl /usr/local/bin/kubectl
+COPY --from=builder --chown=0:0 --chmod=0755 /out/kubeadm /usr/local/bin/kubeadm
+COPY --from=builder --chown=0:0 --chmod=0755 /out/crictl /usr/local/bin/crictl
+COPY --from=builder --chown=0:0 --chmod=0755 /out/etcdctl /usr/local/bin/etcdctl
+COPY --from=builder --chown=0:0 --chmod=0755 /out/etcdutl /usr/local/bin/etcdutl
+COPY --from=builder --chown=0:0 --chmod=0755 /out/clusterctl /usr/local/bin/clusterctl
+COPY --from=builder --chown=0:0 --chmod=0755 /out/kustomize /usr/local/bin/kustomize
+COPY --from=builder --chown=0:0 --chmod=0755 /out/yq /usr/local/bin/yq
 
 WORKDIR /workspace
 USER kube

@@ -66,6 +66,7 @@ fetch_release kubernetes-sigs/cri-tools /src/cri-tools "v${CRICTL_VERSION}" "${C
 fetch_release etcd-io/etcd /src/etcd "v${ETCD_VERSION}" "${ETCD_COMMIT}"
 (
     cd /src/etcd
+    export GOWORK=off
     GOFLAGS= go get golang.org/x/crypto@v0.57.0 golang.org/x/net@v0.58.0 golang.org/x/sys@v0.48.0 golang.org/x/text@v0.42.0
     export GOFLAGS=-mod=mod
     go build -trimpath -ldflags "-s -w" -o /out/etcdctl ./etcdctl

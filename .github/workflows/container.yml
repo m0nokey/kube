@@ -179,7 +179,7 @@ jobs:
           set -eu
           keep_tag="sha-${GITHUB_SHA::7}"
           gh api --paginate --slurp "/users/${GITHUB_REPOSITORY_OWNER}/packages/container/kube/versions?per_page=100" |
-            jq -r --arg keep "${keep_tag}" '.[][] | select(any(.metadata.container.tags[]?; . == $keep or . == "latest") | not) | .id' |
+            jq -r --arg keep "${keep_tag}" '.[][] | select((.metadata.container.tags // []) | length > 0) | select(any(.metadata.container.tags[]; . == $keep or . == "latest") | not) | .id' |
             while read -r version_id; do
               gh api --method DELETE "/users/${GITHUB_REPOSITORY_OWNER}/packages/container/kube/versions/${version_id}"
             done

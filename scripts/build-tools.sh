@@ -30,7 +30,7 @@ mkdir -p /src /out
 fetch_release helm/helm /src/helm "v${HELM_VERSION}" "${HELM_COMMIT}"
 (
     cd /src/helm
-    GOFLAGS= go get golang.org/x/crypto@v0.55.0
+    GOFLAGS= go get golang.org/x/crypto@v0.57.0
     GOFLAGS= go get oras.land/oras-go/v2@v2.6.2
     export GOFLAGS=-mod=readonly
     make build BINDIR=/out VERSION="v${HELM_VERSION}" GIT_COMMIT="${HELM_COMMIT}" GIT_DIRTY=clean
@@ -49,7 +49,7 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
     go mod edit -module kube-tools.local/kubernetes-build
     go mod edit "-require=k8s.io/kubernetes@v${KUBECTL_VERSION}"
     go mod edit "-replace=k8s.io/kubernetes=."
-    GOFLAGS= go get golang.org/x/crypto@v0.55.0
+    GOFLAGS= go get golang.org/x/crypto@v0.57.0
     export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
 )
@@ -57,7 +57,7 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
 fetch_release kubernetes-sigs/kustomize /src/kustomize "kustomize/v${KUSTOMIZE_VERSION}" "${KUSTOMIZE_COMMIT}"
 (
     cd /src/kustomize/kustomize
-    GOFLAGS= go get golang.org/x/text@v0.39.0
+    GOFLAGS= go get golang.org/x/text@v0.42.0
     go build -trimpath -ldflags "-s -w -X sigs.k8s.io/kustomize/api/provenance.version=v${KUSTOMIZE_VERSION}" -o /out/kustomize .
 )
 

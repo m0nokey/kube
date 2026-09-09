@@ -56,12 +56,10 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
 
 case "${TARGETARCH}" in
     amd64)
-        CRICTL_SHA256=83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3
         ETCD_SHA256=e8cd3fa8064c98137c5dbd78b76f969417ace84efb83c481041d7a52ffdd8fb9
         CLUSTERCTL_SHA256=01122674fd3c47a33206ab1b8b81d437afbcf5dd25d126535564f24a2cdf676e
         ;;
     arm64)
-        CRICTL_SHA256=68328594ccf780a80ae2b092d9f6ce484eec7cf540c275242e8fd954bfd95332
         ETCD_SHA256=d7e25e08f694b6ed7792fc7b7a891fe2c3f3d3dccfe2f3bfdb1547b0eb75b6da
         CLUSTERCTL_SHA256=83976008aa9ddb81dab01443c646aaa125e4993e17bf24e790e29779f712d79d
         ;;
@@ -84,16 +82,25 @@ printf '%s  %s\n' "${kubeadm_sha256}" "${kubeadm_binary}" | sha256sum -c -
 cp "${kubeadm_binary}" /out/kubeadm
 rm -f "${kubeadm_binary}"
 
-crictl_archive="/tmp/crictl-v${CRICTL_VERSION}-linux-${TARGETARCH}.tar.gz"
-download_checked "https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-linux-${TARGETARCH}.tar.gz" "${CRICTL_SHA256}" "${crictl_archive}"
-tar -xzf "${crictl_archive}" -C /out
+fetch_release kubernetes-sigs/cri-tools /src/cri-tools "v${CRICTL_VERSION}" "88d8ad9d40f82726fda53c2d271e6172b4c619c9"
+(
+    cd /src/cri-tools
+    sed -i '/github.com\/docker\/docker\/api\/types\/time/d' cmd/crictl/logs.go
+    sed -i 's/timetypes\.GetTimestamp/getTimestamp/g; s/timetypes\.ParseTimestamps/parseTimestamps/g' cmd/crictl/logs.go
+    cp /usr/local/share/crictl-time.go cmd/crictl/time_compat.go
+    gofmt -w cmd/crictl/time_compat.go
+    GOFLAGS= go mod edit -droprequire github.com/docker/docker
+    GOFLAGS= go get golang.org/x/net@v0.59.0 golang.org/x/mod@v0.41.0 go.opentelemetry.io/otel/sdk@v1.46.0
+    GOFLAGS=-mod=mod go mod tidy
+    GOFLAGS=-mod=readonly go build -trimpath -ldflags "-s -w" -o /out/crictl ./cmd/crictl
+)
 
 etcd_archive="/tmp/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}.tar.gz"
 download_checked "https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}.tar.gz" "${ETCD_SHA256}" "${etcd_archive}"
 tar -xzf "${etcd_archive}" -C /tmp
 cp "/tmp/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}/etcdctl" /out/etcdctl
 cp "/tmp/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}/etcdutl" /out/etcdutl
-rm -rf "/tmp/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}" "${crictl_archive}" "${etcd_archive}"
+rm -rf "/tmp/etcd-v${ETCD_VERSION}-linux-${TARGETARCH}" "${etcd_archive}"
 
 clusterctl_binary="/tmp/clusterctl-linux-${TARGETARCH}"
 download_checked "https://github.com/kubernetes-sigs/cluster-api/releases/download/v${CLUSTERCTL_VERSION}/clusterctl-linux-${TARGETARCH}" "${CLUSTERCTL_SHA256}" "${clusterctl_binary}"

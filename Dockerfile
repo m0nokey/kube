@@ -22,6 +22,7 @@ SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 RUN apk add --no-cache bash ca-certificates curl git make
 COPY --chmod=0755 scripts/build-tools.sh /usr/local/bin/build-tools
+COPY scripts/crictl-time.go /usr/local/share/crictl-time.go
 RUN build-tools
 
 FROM ${ALPINE_IMAGE} AS runtime

@@ -1,0 +1,7 @@
+.kube/
+workspace/
+.cache/
+*.log
+.DS_Store
+*.sarif
+*.spdx.json

@@ -1,0 +1,49 @@
+services:
+  kube:
+    build:
+      context: ${KUBE_RUNNER_DIR}
+      dockerfile: Dockerfile
+    image: ${KUBE_IMAGE_NAME:-local/kube-tools:latest}
+    hostname: kube-tools
+
+    ports:
+      - "127.0.0.1:8000-8100:8000-8100"
+      - "127.0.0.1:9000-9100:9000-9100"
+
+    stdin_open: true
+    tty: true
+    init: true
+    read_only: true
+    pids_limit: 120
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    dns_search: []
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    logging:
+      driver: "none"
+
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m,mode=1777
+      - /home/kube/.cache:rw,nosuid,nodev,size=128m,uid=1000,gid=1000,mode=700
+
+    environment:
+      HOME: /home/kube
+      KUBECONFIG: /home/kube/.kube/config
+      TERM: xterm-256color
+      COLORTERM: truecolor
+      OTEL_TRACES_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+
+    volumes:
+      - ${KUBE_WORKSPACE_DIR}:/workspace:rw
+      - ${KUBE_CONFIG_DIR}:/home/kube/.kube:rw
+
+    working_dir: /workspace

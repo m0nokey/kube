@@ -1,0 +1,9 @@
+.git
+.github
+.kube
+workspace
+.cache
+.DS_Store
+*.log
+*.sarif
+*.spdx.json

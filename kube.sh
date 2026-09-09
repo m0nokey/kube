@@ -95,7 +95,10 @@ main() {
             show_help
             ;;
         --build)
-            compose_cmd build "$COMPOSE_SERVICE_NAME"
+            docker_cmd build \
+                --tag "$KUBE_IMAGE_NAME" \
+                --file "$KUBE_RUNNER_DIR/Dockerfile" \
+                "$KUBE_RUNNER_DIR"
             ;;
         --check)
             run_tool kubectl cluster-info

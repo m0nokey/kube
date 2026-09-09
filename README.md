@@ -1,16 +1,19 @@
 # kube-tools
 
-Production-oriented Kubernetes CLI toolbox based on Alpine Linux 3.24. The final container runs as the unprivileged user `kube` (UID/GID 1000) and contains no compiler or build toolchain.
+`kube-tools` is a small security-hardened Kubernetes administration toolbox. It provides a consistent CLI environment without installing kubectl, Helm, Kustomize or yq on the host.
 
-## Included tools
+## Included versions
 
-- Helm 4.2.4
 - kubectl 1.36.4
+- Helm 4.2.4
 - Kustomize 5.8.1
 - yq 4.53.6
-- bash, curl, git, jq, openssl, Python 3, tar, vim and terminal utilities
+- Alpine Linux 3.24
+- Bash, Git, jq, OpenSSL, Python 3, Vim, curl and terminal utilities
 
-The four Go CLIs are built from pinned upstream release tags and pinned commit SHAs with Go 1.27.1 in a separate builder stage. The runtime stage contains only the resulting binaries and Alpine 3.24 packages.
+The image supports `linux/amd64` and `linux/arm64`. Helm, kubectl, Kustomize and yq are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs. The runtime image contains no Go compiler or build toolchain. Security module updates are applied during the reproducible build and the final binaries are scanned, rather than trusting an application version number alone.
+
+Helm 4 is intentional. Helm 3 charts and plugins can have compatibility differences, so use a Helm 3 image for automation that explicitly requires Helm 3.
 
 ## Pull and run
 
@@ -18,64 +21,64 @@ The four Go CLIs are built from pinned upstream release tags and pinned commit S
 docker pull ghcr.io/m0nokey/kube:latest
 
 docker run --rm -it \
-  -v ~/.kube:/home/kube/.kube:ro \
+  --read-only \
+  --cap-drop ALL \
+  --security-opt no-new-privileges \
+  --tmpfs /tmp:rw,nosuid,nodev,size=256m \
+  --tmpfs /home/kube/.cache:rw,nosuid,nodev,size=128m,uid=1000,gid=1000,mode=700 \
+  -v "$HOME/.kube:/home/kube/.kube:ro" \
+  -v "$PWD:/workspace:ro" \
   ghcr.io/m0nokey/kube:latest
 ```
 
-To mount a manifests directory as well:
+Inside the container:
 
 ```bash
-docker run --rm -it \
-  -v ~/.kube:/home/kube/.kube:ro \
-  -v "$PWD:/workspace" \
-  ghcr.io/m0nokey/kube:latest
+kubectl get nodes
+helm list -A
+kubectl apply -f /workspace/app.yaml
+kustomize build /workspace/overlays/prod
+yq --version
 ```
 
-The local wrapper remains available:
+The image contains only the Kubernetes clients. `Server Version` reported by kubectl is the connected cluster's version, not part of this image. Keep the client/server minor-version skew within the Kubernetes support policy.
+
+## `kube.sh` wrapper
+
+The wrapper pulls the published GHCR image automatically; ordinary execution never builds locally. The mounted kubeconfig and workspace are read-only.
 
 ```bash
 cp config.example.yaml .kube/config
-./kube.sh --build
 ./kube.sh
+./kube.sh --check
+./kube.sh --ctx
+./kube.sh --ns
+./kube.sh --logs deploy/my-app
+./kube.sh kubectl get pods -A
 ```
 
-The real kubeconfig under `.kube/` is ignored by both Git and the Docker build context.
+Use `./kube.sh --build` only when an explicit local Docker build is wanted. `.kube/` and `workspace/` are ignored by Git and are never copied into the Docker build context.
 
-## Verify versions
+## Security and supply chain
+
+- Runtime runs as unprivileged user `kube` (UID/GID 1000).
+- Compose uses a read-only root filesystem, read-only host mounts, dropped capabilities and `no-new-privileges`.
+- Compose limits memory to 512 MiB, CPU to one core and processes to 120; `/tmp` and the cache use temporary filesystems.
+- Builder-only packages, source trees and Go caches are absent from the final image.
+- Upstream tags are fetched over HTTPS and checked against pinned commit SHAs.
+- Go build metadata is extracted in CI for every CLI binary.
+- GitHub Actions builds and functionally tests the image, creates an SPDX SBOM and runs Trivy. Any High or Critical finding fails the gate before publication. Trivy SARIF is uploaded when GitHub permissions allow it.
+
+Do not put credentials in the repository or Dockerfile. Keep `.kube/config` local and use a digest when reproducibility is required:
 
 ```bash
-docker run --rm --entrypoint /bin/sh ghcr.io/m0nokey/kube:latest -c '
-  helm version --short
-  kubectl version --client
-  kustomize version
-  yq --version
-  python3 --version
-  git --version
-'
+ghcr.io/m0nokey/kube@sha256:<verified-digest>
 ```
-
-Supported platforms are `linux/amd64` and `linux/arm64`.
-
-## CI, security and supply chain
-
-[The container workflow](.github/workflows/container.yml) runs for pull requests, pushes to `main`, version tags and manual dispatches. Pull requests build, test, extract Go build metadata, generate an SPDX JSON SBOM and scan the locally built image with Trivy. Critical or High findings fail the security gate.
-
-Trusted branch and tag events publish only after that gate passes. The published OCI manifest contains both supported architectures, provenance and an SBOM attestation. Trivy SARIF is uploaded to GitHub code scanning when event permissions allow it; an SPDX JSON SBOM is also retained as a workflow artifact.
-
-Source tags are fetched over HTTPS and verified against immutable commit SHAs. Go modules are resolved in `-mod=readonly` mode and validated against each project's `go.sum`. No downloaded release binary is trusted without verification because all four tools are compiled from verified source instead.
 
 ## Published tags
 
-Pushes to `main` publish:
+Pushes to `main` publish `latest` and `sha-<short-sha>`. A Git tag such as `v1.2.3` publishes `v1.2.3`, `1.2.3`, `1.2` and `1`. Release tags are retained; routine `main` cleanup removes superseded tagged versions while preserving manifests required by the current multi-architecture tags. Pin a digest for long-lived deployments.
 
-- `latest`
-- `sha-<short-sha>`
+## Development
 
-A Git tag such as `v1.2.3` additionally publishes:
-
-- `v1.2.3`
-- `1.2.3`
-- `1.2`
-- `1`
-
-Images are published as `ghcr.io/m0nokey/kube:<tag>`.
+The workflow is defined in [`.github/workflows/container.yml`](.github/workflows/container.yml). Pull requests build, test and scan without publishing. Trusted pushes and tags publish only after the Critical/High Trivy gate passes.

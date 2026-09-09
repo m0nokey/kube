@@ -41,7 +41,7 @@ services:
       OTEL_LOGS_EXPORTER: none
 
     volumes:
-      - ${KUBE_WORKSPACE_DIR}:/workspace:rw
-      - ${KUBE_CONFIG_DIR}:/home/kube/.kube:rw
+      - ${KUBE_WORKSPACE_DIR}:/workspace:ro
+      - ${KUBE_CONFIG_DIR}:/home/kube/.kube:ro
 
     working_dir: /workspace

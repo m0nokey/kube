@@ -4,6 +4,7 @@ services:
       context: ${KUBE_RUNNER_DIR}
       dockerfile: Dockerfile
     image: ${KUBE_IMAGE_NAME:-local/kube-tools:latest}
+    pull_policy: always
     hostname: kube-tools
 
     ports:

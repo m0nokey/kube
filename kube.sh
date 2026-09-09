@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
-KUBE_IMAGE_NAME="${KUBE_IMAGE_NAME:-local/kube-tools:latest}"
+KUBE_IMAGE_NAME="${KUBE_IMAGE_NAME:-ghcr.io/m0nokey/kube:latest}"
 KUBE_RUNNER_DIR="${KUBE_RUNNER_DIR:-$SCRIPT_DIR}"
 KUBE_WORKSPACE_DIR="${KUBE_WORKSPACE_DIR:-${KUBE_RUNNER_DIR}/workspace}"
 KUBE_CONFIG_DIR="${KUBE_CONFIG_DIR:-${KUBE_RUNNER_DIR}/.kube}"

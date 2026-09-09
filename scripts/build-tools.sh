@@ -52,7 +52,6 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
     GOFLAGS= go get golang.org/x/crypto@v0.57.0
     export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
-    go build -trimpath -ldflags "${version_ldflags}" -o /out/kubeadm ./cmd/kubeadm
 )
 
 case "${TARGETARCH}" in
@@ -75,6 +74,15 @@ download_checked() {
     curl -fsSL --retry 5 --retry-delay 2 "${url}" -o "${output}"
     printf '%s  %s\n' "${expected}" "${output}" | sha256sum -c -
 }
+
+kubeadm_binary="/tmp/kubeadm"
+kubeadm_url="https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubeadm"
+kubeadm_sha_url="${kubeadm_url}.sha256"
+curl -fsSL --retry 5 --retry-delay 2 "${kubeadm_url}" -o "${kubeadm_binary}"
+kubeadm_sha256="$(curl -fsSL --retry 5 --retry-delay 2 "${kubeadm_sha_url}" | tr -d '[:space:]')"
+printf '%s  %s\n' "${kubeadm_sha256}" "${kubeadm_binary}" | sha256sum -c -
+cp "${kubeadm_binary}" /out/kubeadm
+rm -f "${kubeadm_binary}"
 
 crictl_archive="/tmp/crictl-v${CRICTL_VERSION}-linux-${TARGETARCH}.tar.gz"
 download_checked "https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-linux-${TARGETARCH}.tar.gz" "${CRICTL_SHA256}" "${crictl_archive}"

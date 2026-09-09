@@ -73,17 +73,18 @@ EOF
 }
 
 run_tool() {
+    compose_cmd pull "$COMPOSE_SERVICE_NAME"
     if [[ $# -eq 0 ]]; then
-        compose_cmd run --rm --service-ports "$COMPOSE_SERVICE_NAME"
+        compose_cmd run --no-build --rm --service-ports "$COMPOSE_SERVICE_NAME"
         return
     fi
 
     if [[ "$1" == "-c" && $# -eq 2 ]]; then
-        compose_cmd run --rm --service-ports "$COMPOSE_SERVICE_NAME" "$@"
+        compose_cmd run --no-build --rm --service-ports "$COMPOSE_SERVICE_NAME" "$@"
         return
     fi
 
-    compose_cmd run --rm --service-ports "$COMPOSE_SERVICE_NAME" -c 'exec "$@"' -- "$@"
+    compose_cmd run --no-build --rm --service-ports "$COMPOSE_SERVICE_NAME" -c 'exec "$@"' -- "$@"
 }
 
 main() {

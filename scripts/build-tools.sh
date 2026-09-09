@@ -33,7 +33,7 @@ fetch_release helm/helm /src/helm "v${HELM_VERSION}" "${HELM_COMMIT}"
     GOFLAGS= go get golang.org/x/crypto@v0.55.0
     GOFLAGS= go get oras.land/oras-go/v2@v2.6.2
     export GOFLAGS=-mod=readonly
-    make build BINDIR=/out VERSION="v${HELM_VERSION}"
+    make build BINDIR=/out VERSION="v${HELM_VERSION}" GIT_COMMIT="${HELM_COMMIT}" GIT_DIRTY=clean
 )
 
 fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUBECTL_COMMIT}"

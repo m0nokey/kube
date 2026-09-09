@@ -8,8 +8,6 @@ FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine AS builder
 ARG TARGETARCH
 ARG HELM_VERSION=4.2.4
 ARG HELM_COMMIT=3900f434fd3ef2b84065dc04508df48f288dba00
-ARG HELM3_VERSION=3.21.4
-ARG HELM3_COMMIT=3e6014342e8358148ae0adc47d1ade956e04a502
 ARG KUBECTL_VERSION=1.36.4
 ARG KUBECTL_COMMIT=bb826b1d48562f110659e64e8ec444327433db95
 ARG KUSTOMIZE_VERSION=5.8.1
@@ -48,7 +46,6 @@ RUN apk add --no-cache \
     && install -d -m 0755 -o kube -g kube /workspace /home/kube/.kube /home/kube/.cache
 
 COPY --from=builder --chmod=0755 /out/helm /usr/local/bin/helm
-COPY --from=builder --chmod=0755 /out/helm3 /usr/local/bin/helm3
 COPY --from=builder --chmod=0755 /out/kubectl /usr/local/bin/kubectl
 COPY --from=builder --chmod=0755 /out/kustomize /usr/local/bin/kustomize
 COPY --from=builder --chmod=0755 /out/yq /usr/local/bin/yq

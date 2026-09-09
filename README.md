@@ -13,7 +13,7 @@
 
 The image supports `linux/amd64` and `linux/arm64`. Helm, kubectl, Kustomize and yq are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs. The runtime image contains no Go compiler or build toolchain. Security module updates are applied during the reproducible build and the final binaries are scanned, rather than trusting an application version number alone.
 
-The image includes both major versions: `helm` is Helm 4.2.4 and `helm3` is Helm 3.21.4. Helm 4 is not a drop-in replacement for Helm 3: CLI flags, plugins, SDK/API integrations and automation can break across this major-version boundary. Use `helm3` when exact Helm 3 behavior is required, and test either version before production use.
+Helm 4 is intentional, but it is not a drop-in replacement for Helm 3. Most Helm 3 charts and existing releases are expected to work, while CLI flags, plugins, SDK/API integrations and automation can break across this major-version boundary. Test Helm 4 before production use; choose a Helm 3 image when exact Helm 3 compatibility is required.
 
 ## Pull and run
 
@@ -36,7 +36,6 @@ Inside the container:
 ```bash
 kubectl get nodes
 helm list -A
-helm3 list -A  # Helm 3 compatibility mode
 kubectl apply -f /workspace/app.yaml
 kustomize build /workspace/overlays/prod
 yq --version
@@ -67,7 +66,7 @@ Use `./kube.sh --build` only when an explicit local Docker build is wanted. `.ku
 - Compose limits memory to 512 MiB, CPU to one core and processes to 120; `/tmp` and the cache use temporary filesystems.
 - Builder-only packages, source trees and Go caches are absent from the final image.
 - Upstream tags are fetched over HTTPS and checked against pinned commit SHAs.
-- Go build metadata is extracted in CI for every CLI binary, including both Helm versions.
+- Go build metadata is extracted in CI for every CLI binary.
 - GitHub Actions builds and functionally tests the image, creates an SPDX SBOM and runs Trivy. Any High or Critical finding fails the gate before publication. Trivy SARIF is uploaded when GitHub permissions allow it.
 
 Do not put credentials in the repository or Dockerfile. Keep `.kube/config` local and use a digest when reproducibility is required:

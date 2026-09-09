@@ -50,7 +50,7 @@ jobs:
           metadata_dir="${RUNNER_TEMP}/go-metadata"
           mkdir -p "${metadata_dir}"
           trap 'docker rm -f "${container_id}" >/dev/null 2>&1 || true' EXIT
-          for binary in helm helm3 kubectl kustomize yq; do
+          for binary in helm kubectl kustomize yq; do
             docker cp "${container_id}:/usr/local/bin/${binary}" "${metadata_dir}/${binary}"
           done
           docker run --rm -v "${metadata_dir}:/binaries:ro" golang:1.27.1-alpine             sh -c 'for binary in /binaries/*; do go version -m "$binary"; done'

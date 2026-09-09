@@ -52,6 +52,35 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
     GOFLAGS= go get golang.org/x/crypto@v0.57.0
     export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
+    go build -trimpath -ldflags "${version_ldflags}" -o /out/kubeadm ./cmd/kubeadm
+)
+
+fetch_release kubernetes-sigs/cri-tools /src/cri-tools "v${CRICTL_VERSION}" "${CRICTL_COMMIT}"
+(
+    cd /src/cri-tools
+    GOFLAGS= go get golang.org/x/net@v0.58.0 golang.org/x/sys@v0.48.0 golang.org/x/text@v0.42.0
+    GOFLAGS= go mod tidy
+    export GOFLAGS=-mod=readonly
+    go build -trimpath -ldflags "-s -w" -o /out/crictl ./cmd/crictl
+)
+
+fetch_release etcd-io/etcd /src/etcd "v${ETCD_VERSION}" "${ETCD_COMMIT}"
+(
+    cd /src/etcd
+    GOFLAGS= go get golang.org/x/crypto@v0.57.0 golang.org/x/net@v0.58.0 golang.org/x/sys@v0.48.0 golang.org/x/text@v0.42.0
+    GOFLAGS= go mod tidy
+    export GOFLAGS=-mod=readonly
+    go build -trimpath -ldflags "-s -w" -o /out/etcdctl ./etcdctl
+    go build -trimpath -ldflags "-s -w" -o /out/etcdutl ./etcdutl
+)
+
+fetch_release kubernetes-sigs/cluster-api /src/cluster-api "v${CLUSTERCTL_VERSION}" "${CLUSTERCTL_COMMIT}"
+(
+    cd /src/cluster-api
+    GOFLAGS= go get golang.org/x/crypto@v0.57.0 golang.org/x/net@v0.58.0 golang.org/x/sys@v0.48.0 golang.org/x/text@v0.42.0
+    GOFLAGS= go mod tidy
+    export GOFLAGS=-mod=readonly
+    go build -trimpath -ldflags "-s -w" -o /out/clusterctl ./cmd/clusterctl
 )
 
 fetch_release kubernetes-sigs/kustomize /src/kustomize "kustomize/v${KUSTOMIZE_VERSION}" "${KUSTOMIZE_COMMIT}"

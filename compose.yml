@@ -11,6 +11,8 @@ services:
     stdin_open: true
     tty: true
     init: true
+    stop_signal: SIGINT
+    stop_grace_period: 1s
     read_only: true
     pids_limit: 120
     mem_limit: 512m

@@ -10,6 +10,12 @@ ARG HELM_VERSION=4.2.4
 ARG HELM_COMMIT=3900f434fd3ef2b84065dc04508df48f288dba00
 ARG KUBECTL_VERSION=1.36.4
 ARG KUBECTL_COMMIT=bb826b1d48562f110659e64e8ec444327433db95
+ARG CRICTL_VERSION=1.36.0
+ARG CRICTL_COMMIT=88d8ad9d40f82726fda53c2d271e6172b4c619c9
+ARG ETCD_VERSION=3.7.1
+ARG ETCD_COMMIT=5e7fd0de9a57db03ecc11794dc40403a734c07bb
+ARG CLUSTERCTL_VERSION=1.14.2
+ARG CLUSTERCTL_COMMIT=92590c318ebc4cb2075bae6ad8b4ba9a094e40a0
 ARG KUSTOMIZE_VERSION=5.8.1
 ARG KUSTOMIZE_COMMIT=9790a1c3efd2fd35f1b768d495112834176581c1
 ARG YQ_VERSION=4.53.6
@@ -47,10 +53,17 @@ RUN apk add --no-cache \
 
 COPY --from=builder --chmod=0755 /out/helm /usr/local/bin/helm
 COPY --from=builder --chmod=0755 /out/kubectl /usr/local/bin/kubectl
+COPY --from=builder --chmod=0755 /out/kubeadm /usr/local/bin/kubeadm
+COPY --from=builder --chmod=0755 /out/crictl /usr/local/bin/crictl
+COPY --from=builder --chmod=0755 /out/etcdctl /usr/local/bin/etcdctl
+COPY --from=builder --chmod=0755 /out/etcdutl /usr/local/bin/etcdutl
+COPY --from=builder --chmod=0755 /out/clusterctl /usr/local/bin/clusterctl
 COPY --from=builder --chmod=0755 /out/kustomize /usr/local/bin/kustomize
 COPY --from=builder --chmod=0755 /out/yq /usr/local/bin/yq
 
 WORKDIR /workspace
 USER kube
+
+STOPSIGNAL SIGINT
 
 ENTRYPOINT ["/bin/bash"]

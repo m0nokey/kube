@@ -39,18 +39,18 @@ fetch_release helm/helm /src/helm "v${HELM_VERSION}" "${HELM_COMMIT}"
 fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUBECTL_COMMIT}"
 (
     cd /src/kubernetes
-    go mod edit -module kube-tools.local/kubernetes-build
-    go mod edit "-require=k8s.io/kubernetes@v${KUBECTL_VERSION}"
-    go mod edit "-replace=k8s.io/kubernetes=."
-    GOFLAGS= go get golang.org/x/crypto@v0.55.0
-    export GOFLAGS=-mod=readonly
-
     version_ldflags="$(bash -c '
         export KUBE_ROOT=/src/kubernetes
         source hack/lib/version.sh
         kube::version::get_version_vars
         kube::version::ldflags
     ')"
+
+    go mod edit -module kube-tools.local/kubernetes-build
+    go mod edit "-require=k8s.io/kubernetes@v${KUBECTL_VERSION}"
+    go mod edit "-replace=k8s.io/kubernetes=."
+    GOFLAGS= go get golang.org/x/crypto@v0.55.0
+    export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
 )
 

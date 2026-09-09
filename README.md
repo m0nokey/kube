@@ -13,7 +13,7 @@
 
 The image supports `linux/amd64` and `linux/arm64`. Helm, kubectl, Kustomize and yq are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs. The runtime image contains no Go compiler or build toolchain. Security module updates are applied during the reproducible build and the final binaries are scanned, rather than trusting an application version number alone.
 
-Helm 4 is intentional. Helm 3 charts and plugins can have compatibility differences, so use a Helm 3 image for automation that explicitly requires Helm 3.
+Helm 4 is intentional, but it is not a drop-in replacement for Helm 3. Most Helm 3 charts and existing releases are expected to work, while CLI flags, plugins, SDK/API integrations and automation can break across this major-version boundary. Test Helm 4 before production use; choose a Helm 3 image when exact Helm 3 compatibility is required.
 
 ## Pull and run
 

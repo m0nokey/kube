@@ -72,6 +72,25 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "0"
 
+      - name: Generate Trivy JSON diagnostics
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.TEST_IMAGE }}
+          format: json
+          output: trivy-results.json
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+
+      - name: Annotate Critical/High findings
+        run: |
+          jq -r '
+            .Results[]
+            | select(.Vulnerabilities != null)
+            | .Target as $target
+            | .Vulnerabilities[]
+            | "::error title=Trivy \(.VulnerabilityID) [\(.Severity)]::\($target): \(.PkgName) \(.InstalledVersion) -> \(.FixedVersion // "unfixed")"
+          ' trivy-results.json
+
       - name: Upload SARIF
         if: ${{ always() && hashFiles('trivy-results.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/upload-sarif@v4

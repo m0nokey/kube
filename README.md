@@ -4,9 +4,9 @@
 
 ## Included versions
 
-- kubectl 1.36.4
-- kubeadm 1.36.4
-- crictl 1.36.0 (Kubernetes 1.36 line)
+- kubectl 1.37.0
+- kubeadm 1.37.0
+- crictl 1.37.0 (Kubernetes 1.37 line)
 - etcdctl 3.7.1
 - etcdutl 3.7.1
 - clusterctl 1.14.2
@@ -16,7 +16,7 @@
 - Alpine Linux 3.24
 - Bash, Git, jq, OpenSSL, Python 3, Vim, curl and terminal utilities
 
-The image supports `linux/amd64` and `linux/arm64`. Kubernetes tools `kubectl`, `kubeadm` and `crictl` are kept on the 1.36 minor line; `etcdctl` and `etcdutl` use the same etcd 3.7.1 release. All Go CLI tools are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs. The runtime image contains no Go compiler or build toolchain. Security module updates are applied during the reproducible build and the final binaries are scanned, rather than trusting an application version number alone.
+The image supports `linux/amd64` and `linux/arm64`. Kubernetes tools `kubectl`, `kubeadm` and `crictl` are aligned on the official 1.37.0 minor line; `etcdctl` and `etcdutl` use the same official etcd 3.7.1 release. Go tools are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs, with security-fixed module versions. The runtime image contains no Go compiler or build toolchain. The final binaries are scanned by Trivy, and High/Critical findings block publication.
 
 Helm 4 is intentional, but it is not a drop-in replacement for Helm 3. Most Helm 3 charts and existing releases are expected to work, while CLI flags, plugins, SDK/API integrations and automation can break across this major-version boundary. Test Helm 4 before production use; choose a Helm 3 image when exact Helm 3 compatibility is required.
 

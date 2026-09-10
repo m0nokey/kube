@@ -1,7 +1,8 @@
 services:
   kube:
     image: ${KUBE_IMAGE_NAME:-local/kube-tools:latest}
-    pull_policy: always
+    # kube.sh performs the explicit refresh once; never pull again during compose run.
+    pull_policy: missing
     hostname: kube-tools
 
     ports:

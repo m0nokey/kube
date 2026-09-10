@@ -72,8 +72,19 @@ Files:
 EOF
 }
 
-run_tool() {
+IMAGE_READY=0
+
+ensure_image() {
+    if [[ "$IMAGE_READY" == 1 ]]; then
+        return 0
+    fi
+
     compose_cmd pull "$COMPOSE_SERVICE_NAME"
+    IMAGE_READY=1
+}
+
+run_tool() {
+    ensure_image
     if [[ $# -eq 0 ]]; then
         compose_cmd run --sig-proxy=true --rm --service-ports "$COMPOSE_SERVICE_NAME"
         return

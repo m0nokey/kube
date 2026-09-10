@@ -77,8 +77,20 @@ jobs:
           version: v0.74.0
           image-ref: ${{ env.TEST_IMAGE }}
           format: table
+          output: trivy-results.txt
           severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           exit-code: "0"
+
+      - name: Add Trivy report to Actions summary
+        if: ${{ always() && hashFiles('trivy-results.txt') != '' }}
+        run: |
+          {
+            echo '## Trivy vulnerability report'
+            echo
+            echo '```text'
+            cat trivy-results.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Trivy SARIF
         uses: aquasecurity/trivy-action@v0.36.0
@@ -87,7 +99,9 @@ jobs:
           image-ref: ${{ env.TEST_IMAGE }}
           format: sarif
           output: trivy-results.sarif
-          severity: HIGH,CRITICAL
+          # Upload every severity to GitHub Security / Code scanning.
+          # The blocking HIGH/CRITICAL gate remains a separate step below.
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           exit-code: "0"
 
       - name: Generate Trivy JSON diagnostics

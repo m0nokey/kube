@@ -86,16 +86,16 @@ ensure_image() {
 run_tool() {
     ensure_image
     if [[ $# -eq 0 ]]; then
-        compose_cmd run --pull never --sig-proxy=true --rm --service-ports "$COMPOSE_SERVICE_NAME"
+        compose_cmd run --pull never --rm --service-ports "$COMPOSE_SERVICE_NAME"
         return
     fi
 
     if [[ "$1" == "-c" && $# -eq 2 ]]; then
-        compose_cmd run --pull never --sig-proxy=true --rm --service-ports "$COMPOSE_SERVICE_NAME" "$@"
+        compose_cmd run --pull never --rm --service-ports "$COMPOSE_SERVICE_NAME" "$@"
         return
     fi
 
-    compose_cmd run --pull never --sig-proxy=true --rm --service-ports "$COMPOSE_SERVICE_NAME" -c 'exec "$@"' -- "$@"
+    compose_cmd run --pull never --rm --service-ports "$COMPOSE_SERVICE_NAME" -c 'exec "$@"' -- "$@"
 }
 
 main() {

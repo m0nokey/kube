@@ -1,24 +1,26 @@
 # kube-tools
 
-`kube-tools` is a small security-hardened Kubernetes administration toolbox. It provides a consistent CLI environment without installing kubectl, Helm, Kustomize or yq on the host.
+`kube-tools` is a portable, security-focused Kubernetes administration toolbox. It provides the same CLI environment on any machine without installing Kubernetes tools on the host.
 
-## Included versions
+## Included tools
 
-- kubectl 1.37.0
-- kubeadm 1.37.0
-- crictl 1.37.0 (Kubernetes 1.37 line)
-- etcdctl 3.7.1
-- etcdutl 3.7.1
-- clusterctl 1.14.2
-- Helm 4.2.4
-- Kustomize 5.8.1
-- yq 4.53.6
-- Alpine Linux 3.24
-- Bash, Git, jq, OpenSSL, Python 3, Vim, curl and terminal utilities
+| Tool | Version | Notes |
+| --- | --- | --- |
+| kubectl | 1.37.0 | Kubernetes 1.37 line |
+| kubeadm | 1.37.0 | Kubernetes 1.37 line |
+| crictl | 1.37.0 | Kubernetes 1.37 line |
+| etcdctl | 3.7.1 | Same etcd release as etcdutl |
+| etcdutl | 3.7.1 | Same etcd release as etcdctl |
+| clusterctl | 1.14.2 | Cluster API release line |
+| Helm | 4.2.4 | Helm 4; see compatibility note below |
+| Kustomize | 5.8.1 | |
+| yq | 4.53.6 | |
 
-The image supports `linux/amd64` and `linux/arm64`. Kubernetes tools `kubectl`, `kubeadm` and `crictl` are aligned on the official 1.37.0 minor line; `etcdctl` and `etcdutl` use the same official etcd 3.7.1 release. Go tools are built in a separate Go 1.27.1 builder stage from pinned upstream release tags and commit SHAs, with security-fixed module versions. The runtime image contains no Go compiler or build toolchain. The final binaries are scanned by Trivy, and High/Critical findings block publication.
+The runtime also includes Alpine Linux 3.24, Bash, Git, jq, OpenSSL, Python 3, Vim, curl and terminal utilities. Published images support only `linux/amd64` and `linux/arm64` (both 64-bit).
 
-Helm 4 is intentional, but it is not a drop-in replacement for Helm 3. Most Helm 3 charts and existing releases are expected to work, while CLI flags, plugins, SDK/API integrations and automation can break across this major-version boundary. Test Helm 4 before production use; choose a Helm 3 image when exact Helm 3 compatibility is required.
+Source-built Go tools use a separate Go `1.27.1` builder stage with pinned upstream release tags and commit SHAs. The build applies one audited set of current stable Go modules, including `go.etcd.io/etcd/client/pkg/v3 v3.7.1`, and runs `go mod tidy` before compilation. `clusterctl` is the official upstream release asset with SHA256 verification. The runtime image contains no Go compiler, source tree or build toolchain.
+
+Helm 4 is intentional, but it is a major-version upgrade and is not a drop-in replacement for Helm 3. Most Helm 3 charts and releases are expected to work, while plugins, SDK/API integrations, post-renderers, flags and automation may require changes. Test Helm 4 before production use.
 
 ## Pull and run
 
@@ -41,22 +43,24 @@ Inside the container:
 
 ```bash
 kubectl get nodes
+kubectl version --client
 kubeadm version
 crictl --version
 etcdctl version
 etcdutl version
 clusterctl version
+helm version
 helm list -A
 kubectl apply -f /workspace/app.yaml
 kustomize build /workspace/overlays/prod
 yq --version
 ```
 
-The image contains only the Kubernetes clients. `Server Version` reported by kubectl is the connected cluster's version, not part of this image. Keep the client/server minor-version skew within the Kubernetes support policy.
+`kubectl`'s `Server Version` is returned by the connected cluster; it is not part of this image. Keep client/server minor-version skew within the Kubernetes support policy.
 
 ## `kube.sh` wrapper
 
-The wrapper pulls the published GHCR image automatically; ordinary execution never builds locally. It allocates an interactive TTY, proxies Ctrl+C/SIGINT, and uses a short stop grace period. The mounted kubeconfig and workspace are read-only.
+The wrapper pulls the published image once at the start of each invocation and then runs Compose with `--pull never`, so exiting the shell does not trigger another pull or container. It allocates a TTY, forwards Ctrl+C/SIGINT, uses `init: true`, and removes the temporary container on exit. The tracked Compose configuration mounts the kubeconfig and workspace read-only.
 
 ```bash
 cp config.example.yaml .kube/config
@@ -68,28 +72,41 @@ cp config.example.yaml .kube/config
 ./kube.sh kubectl get pods -A
 ```
 
-Use `./kube.sh --build` only when an explicit local Docker build is wanted. `.kube/` and `workspace/` are ignored by Git and are never copied into the Docker build context.
+Use `./kube.sh --build` only for an explicit local Docker build. It does not push to GHCR. `.kube/` and `workspace/` are ignored by Git and excluded from the Docker build context; credentials are never copied into the image.
 
 ## Security and supply chain
 
 - Runtime runs as unprivileged user `kube` (UID/GID 1000).
-- Compose uses a read-only root filesystem, read-only host mounts, dropped capabilities and `no-new-privileges`.
-- Compose limits memory to 512 MiB, CPU to one core and processes to 120; `/tmp` and the cache use temporary filesystems.
+- Compose uses a read-only root filesystem, dropped capabilities and `no-new-privileges`.
+- Compose limits memory to 512 MiB, CPU to one core and processes to 120; `/tmp`, cache and config use temporary filesystems.
 - Builder-only packages, source trees and Go caches are absent from the final image.
-- Upstream tags are fetched over HTTPS and checked against pinned commit SHAs.
+- Upstream source tags are fetched over HTTPS and checked against pinned commit SHAs. Release assets use SHA256 verification where provided.
 - Go build metadata is extracted in CI for every CLI binary.
-- GitHub Actions builds and functionally tests the image, creates an SPDX SBOM and runs Trivy. Any High or Critical finding fails the gate before publication. Trivy SARIF is uploaded when GitHub permissions allow it.
+- No secrets are stored in the Dockerfile, build arguments, image layers or repository. Keep `.kube/config` local.
 
-Do not put credentials in the repository or Dockerfile. Keep `.kube/config` local and use a digest when reproducibility is required:
+For reproducible deployments, pin a verified manifest digest instead of a mutable tag:
 
 ```bash
 ghcr.io/m0nokey/kube@sha256:<verified-digest>
 ```
 
-## Published tags
+## Trivy reporting and gate
 
-Pushes to `main` publish `latest` and `sha-<short-sha>`. A Git tag such as `v1.2.3` publishes `v1.2.3`, `1.2.3`, `1.2` and `1`. Release tags are retained; routine `main` cleanup removes superseded tagged versions while preserving manifests required by the current multi-architecture tags. Pin a digest for long-lived deployments.
+Every trusted push and pull request builds an amd64 test image before publication. Trivy runs an informational scan for `UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL` and a blocking scan for `HIGH,CRITICAL` with `exit-code: 1`.
+
+The full informational table is written to the **Actions → Summary** page. The full all-severity SARIF report is uploaded to **Security → Code scanning** (subject to GitHub fork permissions). Medium/Low findings remain visible for follow-up; any High or Critical finding fails the workflow and prevents GHCR publication. An SPDX JSON SBOM is uploaded as a workflow artifact.
+
+Pull requests build, test and scan but never publish an image. Only trusted pushes/tags publish after the gate passes.
+
+## Published tags and architectures
+
+Pushes to `main` publish `latest` and `sha-<short-sha>`. A Git tag such as `v1.2.3` publishes `v1.2.3`, `1.2.3`, `1.2` and `1`. The manifest contains only:
+
+- `linux/amd64`
+- `linux/arm64`
+
+Old image versions may be cleaned up by the publish workflow; pin a digest for long-lived deployments.
 
 ## Development
 
-The workflow is defined in [`.github/workflows/container.yml`](.github/workflows/container.yml). Pull requests build, test and scan without publishing. Trusted pushes and tags publish only after the Critical/High Trivy gate passes.
+The image definition is in [`Dockerfile`](Dockerfile), the wrapper is [`kube.sh`](kube.sh), and CI is [`.github/workflows/container.yml`](.github/workflows/container.yml). The optional verification script is [`scripts/verify-tools.sh`](scripts/verify-tools.sh).

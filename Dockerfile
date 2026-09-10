@@ -30,7 +30,8 @@ FROM ${ALPINE_IMAGE} AS runtime
 
 ENV HOME=/home/kube \
     KUBECONFIG=/home/kube/.kube/config \
-    XDG_CACHE_HOME=/home/kube/.cache
+    XDG_CACHE_HOME=/home/kube/.cache \
+    XDG_CONFIG_HOME=/home/kube/.config
 
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 

@@ -12,6 +12,35 @@ export GOOS=linux
 export GOTOOLCHAIN=local
 export GOFLAGS=-mod=readonly
 
+# These are the latest stable versions reported by proxy.golang.org when
+# this build script was updated. Keep one audited set for every Go binary.
+GO_X_CRYPTO_VERSION=v0.57.0
+GO_X_NET_VERSION=v0.59.0
+GO_X_TEXT_VERSION=v0.42.0
+GO_X_SYS_VERSION=v0.48.0
+GO_X_SYNC_VERSION=v0.23.0
+GO_X_MOD_VERSION=v0.41.0
+GO_X_TOOLS_VERSION=v0.50.0
+GO_GRPC_VERSION=v1.83.2
+GO_ORAS_VERSION=v2.6.2
+GO_OTEL_SDK_VERSION=v1.46.0
+GO_ETCD_CLIENT_PKG_VERSION=v3.7.1
+
+go_get_latest_modules() {
+    GOFLAGS= go get \
+        golang.org/x/crypto@"${GO_X_CRYPTO_VERSION}" \
+        golang.org/x/net@"${GO_X_NET_VERSION}" \
+        golang.org/x/text@"${GO_X_TEXT_VERSION}" \
+        golang.org/x/sys@"${GO_X_SYS_VERSION}" \
+        golang.org/x/sync@"${GO_X_SYNC_VERSION}" \
+        golang.org/x/mod@"${GO_X_MOD_VERSION}" \
+        golang.org/x/tools@"${GO_X_TOOLS_VERSION}" \
+        google.golang.org/grpc@"${GO_GRPC_VERSION}" \
+        oras.land/oras-go/v2@"${GO_ORAS_VERSION}" \
+        go.opentelemetry.io/otel/sdk@"${GO_OTEL_SDK_VERSION}" \
+        go.etcd.io/etcd/client/pkg/v3@"${GO_ETCD_CLIENT_PKG_VERSION}"
+}
+
 fetch_release() {
     repository="$1"
     directory="$2"
@@ -39,8 +68,8 @@ mkdir -p /src /out
 fetch_release helm/helm /src/helm "v${HELM_VERSION}" "${HELM_COMMIT}"
 (
     cd /src/helm
-    GOFLAGS= go get golang.org/x/crypto@v0.57.0
-    GOFLAGS= go get oras.land/oras-go/v2@v2.6.2
+    go_get_latest_modules
+    GOFLAGS=-mod=mod go mod tidy
     export GOFLAGS=-mod=readonly
     make build BINDIR=/out VERSION="v${HELM_VERSION}" GIT_COMMIT="${HELM_COMMIT}" GIT_DIRTY=clean
 )
@@ -58,16 +87,10 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
     go mod edit -module kube-tools.local/kubernetes-build
     go mod edit "-require=k8s.io/kubernetes@v${KUBECTL_VERSION}"
     go mod edit "-replace=k8s.io/kubernetes=."
-    # kubeadm's Kubernetes graph can otherwise retain the vulnerable
-    # etcd client/pkg v3.7.0. Keep the official Kubernetes source/tag,
-    # but force the fixed etcd module used by the resulting binaries.
-    GOFLAGS= go get \
-        go.etcd.io/etcd/client/pkg/v3@v3.7.1 \
-        golang.org/x/crypto@v0.57.0 \
-        golang.org/x/net@v0.59.0 \
-        golang.org/x/text@v0.42.0 \
-        golang.org/x/sys@v0.48.0 \
-        google.golang.org/grpc@v1.83.2
+    # Keep the official Kubernetes source/tag while applying the audited
+    # latest stable Go module set, including the fixed etcd client package.
+    go_get_latest_modules
+    GOFLAGS=-mod=mod go mod tidy
     export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubeadm ./cmd/kubeadm
@@ -77,7 +100,7 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
 fetch_release kubernetes-sigs/cri-tools /src/cri-tools "v${CRICTL_VERSION}" "${CRICTL_COMMIT}"
 (
     cd /src/cri-tools
-    GOFLAGS= go get golang.org/x/net@v0.59.0 golang.org/x/mod@v0.41.0 go.opentelemetry.io/otel/sdk@v1.46.0 google.golang.org/grpc@v1.83.2
+    go_get_latest_modules
     GOFLAGS=-mod=mod go mod tidy
     crictl_ldflags="-s -w -X sigs.k8s.io/cri-tools/pkg/version.Version=${CRICTL_VERSION}"
     GOFLAGS=-mod=readonly go build -trimpath -ldflags "${crictl_ldflags}" -o /out/crictl ./cmd/crictl
@@ -90,16 +113,7 @@ fetch_release etcd-io/etcd /src/etcd "v${ETCD_VERSION}" "${ETCD_COMMIT}"
     for module_dir in etcdctl etcdutl; do
         (
             cd "${module_dir}"
-            # etcd v3.7.1's release module graph can still select the
-            # vulnerable client/pkg v3.7.0 transitively. Pin the fixed
-            # module explicitly while keeping the official etcd source/tag.
-            GOFLAGS= go get \
-                go.etcd.io/etcd/client/pkg/v3@v3.7.1 \
-                golang.org/x/crypto@v0.57.0 \
-                golang.org/x/net@v0.59.0 \
-                golang.org/x/text@v0.42.0 \
-                golang.org/x/sys@v0.48.0 \
-                google.golang.org/grpc@v1.83.2
+            go_get_latest_modules
             GOFLAGS=-mod=mod go mod tidy
         )
     done
@@ -127,13 +141,16 @@ rm -f "${clusterctl_binary}"
 fetch_release kubernetes-sigs/kustomize /src/kustomize "kustomize/v${KUSTOMIZE_VERSION}" "${KUSTOMIZE_COMMIT}"
 (
     cd /src/kustomize/kustomize
-    GOFLAGS= go get golang.org/x/text@v0.42.0
+    go_get_latest_modules
+    GOFLAGS=-mod=mod go mod tidy
     go build -trimpath -ldflags "-s -w -X sigs.k8s.io/kustomize/api/provenance.version=v${KUSTOMIZE_VERSION}" -o /out/kustomize .
 )
 
 fetch_release mikefarah/yq /src/yq "v${YQ_VERSION}" "${YQ_COMMIT}"
 (
     cd /src/yq
+    go_get_latest_modules
+    GOFLAGS=-mod=mod go mod tidy
     go build -trimpath -ldflags "-s -w -X github.com/mikefarah/yq/v4/cmd.yqVersion=v${YQ_VERSION}" -o /out/yq .
 )
 

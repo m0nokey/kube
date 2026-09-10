@@ -48,7 +48,7 @@ RUN apk add --no-cache \
         tar \
     && addgroup -g 1000 -S kube \
     && adduser -S -D -u 1000 -G kube -h /home/kube -s /bin/bash kube \
-    && install -d -m 0755 -o kube -g kube /workspace /home/kube/.kube /home/kube/.cache
+    && install -d -m 0755 -o kube -g kube /workspace /home/kube/.kube /home/kube/.cache /home/kube/.config
 
 COPY --from=builder --chown=0:0 --chmod=0755 /out/helm /usr/local/bin/helm
 COPY --from=builder --chown=0:0 --chmod=0755 /out/kubectl /usr/local/bin/kubectl

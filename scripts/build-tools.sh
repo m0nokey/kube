@@ -70,7 +70,8 @@ fetch_release kubernetes-sigs/cri-tools /src/cri-tools "v${CRICTL_VERSION}" "${C
     cd /src/cri-tools
     GOFLAGS= go get golang.org/x/net@v0.59.0 golang.org/x/mod@v0.41.0 go.opentelemetry.io/otel/sdk@v1.46.0 google.golang.org/grpc@v1.83.2
     GOFLAGS=-mod=mod go mod tidy
-    GOFLAGS=-mod=readonly go build -trimpath -ldflags "-s -w" -o /out/crictl ./cmd/crictl
+    crictl_ldflags="-s -w -X sigs.k8s.io/cri-tools/pkg/version.Version=${CRICTL_VERSION}"
+    GOFLAGS=-mod=readonly go build -trimpath -ldflags "${crictl_ldflags}" -o /out/crictl ./cmd/crictl
 )
 
 # etcdctl and etcdutl: official etcd release source, pinned tag/commit.

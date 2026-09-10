@@ -31,6 +31,7 @@ docker run --rm -it \
   --security-opt no-new-privileges \
   --tmpfs /tmp:rw,nosuid,nodev,size=256m \
   --tmpfs /home/kube/.cache:rw,nosuid,nodev,size=128m,uid=1000,gid=1000,mode=700 \
+  --tmpfs /home/kube/.config:rw,nosuid,nodev,size=64m,uid=1000,gid=1000,mode=700 \
   -v "$HOME/.kube:/home/kube/.kube:ro" \
   -v "$PWD:/workspace:ro" \
   ghcr.io/m0nokey/kube:latest

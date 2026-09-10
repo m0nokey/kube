@@ -29,8 +29,9 @@ test "$(whoami)" = kube
 test "$(id -u)" = 1000
 test "${HOME}" = /home/kube
 test "${KUBECONFIG}" = /home/kube/.kube/config
+test "${XDG_CONFIG_HOME}" = /home/kube/.config
 
-for directory in /workspace /home/kube/.kube /home/kube/.cache; do
+for directory in /workspace /home/kube/.kube /home/kube/.cache /home/kube/.config; do
     test -d "${directory}" || fail "missing directory: ${directory}"
 done
 

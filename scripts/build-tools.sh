@@ -81,7 +81,16 @@ fetch_release etcd-io/etcd /src/etcd "v${ETCD_VERSION}" "${ETCD_COMMIT}"
     for module_dir in etcdctl etcdutl; do
         (
             cd "${module_dir}"
-            GOFLAGS= go get golang.org/x/crypto@v0.57.0 golang.org/x/net@v0.59.0 golang.org/x/text@v0.42.0 golang.org/x/sys@v0.48.0 google.golang.org/grpc@v1.83.2
+            # etcd v3.7.1's release module graph can still select the
+            # vulnerable client/pkg v3.7.0 transitively. Pin the fixed
+            # module explicitly while keeping the official etcd source/tag.
+            GOFLAGS= go get \
+                go.etcd.io/etcd/client/pkg/v3@v3.7.1 \
+                golang.org/x/crypto@v0.57.0 \
+                golang.org/x/net@v0.59.0 \
+                golang.org/x/text@v0.42.0 \
+                golang.org/x/sys@v0.48.0 \
+                google.golang.org/grpc@v1.83.2
             GOFLAGS=-mod=mod go mod tidy
         )
     done

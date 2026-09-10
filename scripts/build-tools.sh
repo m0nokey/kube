@@ -58,7 +58,16 @@ fetch_release kubernetes/kubernetes /src/kubernetes "v${KUBECTL_VERSION}" "${KUB
     go mod edit -module kube-tools.local/kubernetes-build
     go mod edit "-require=k8s.io/kubernetes@v${KUBECTL_VERSION}"
     go mod edit "-replace=k8s.io/kubernetes=."
-    GOFLAGS= go get golang.org/x/crypto@v0.57.0 golang.org/x/net@v0.59.0 golang.org/x/text@v0.42.0 golang.org/x/sys@v0.48.0 google.golang.org/grpc@v1.83.2
+    # kubeadm's Kubernetes graph can otherwise retain the vulnerable
+    # etcd client/pkg v3.7.0. Keep the official Kubernetes source/tag,
+    # but force the fixed etcd module used by the resulting binaries.
+    GOFLAGS= go get \
+        go.etcd.io/etcd/client/pkg/v3@v3.7.1 \
+        golang.org/x/crypto@v0.57.0 \
+        golang.org/x/net@v0.59.0 \
+        golang.org/x/text@v0.42.0 \
+        golang.org/x/sys@v0.48.0 \
+        google.golang.org/grpc@v1.83.2
     export GOFLAGS=-mod=readonly
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubectl ./cmd/kubectl
     go build -trimpath -ldflags "${version_ldflags}" -o /out/kubeadm ./cmd/kubeadm
